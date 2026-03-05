@@ -6,6 +6,8 @@
 #include "MatrixDisplayUi.h"
 #include "effects.h"
 
+#define MAX_CUSTOM_APPS 20
+
 struct CustomApp
 {
     int bounceDir = 0;
@@ -90,7 +92,6 @@ void ShowCustomApp(String name, FastLED_NeoMatrix *matrix, MatrixDisplayUiState 
 #define DECLARE_CAPP(N) \
     void CApp##N(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
 
-#define MAX_CUSTOM_APPS 20
 DECLARE_CAPP(1)  DECLARE_CAPP(2)  DECLARE_CAPP(3)  DECLARE_CAPP(4)  DECLARE_CAPP(5)
 DECLARE_CAPP(6)  DECLARE_CAPP(7)  DECLARE_CAPP(8)  DECLARE_CAPP(9)  DECLARE_CAPP(10)
 DECLARE_CAPP(11) DECLARE_CAPP(12) DECLARE_CAPP(13) DECLARE_CAPP(14) DECLARE_CAPP(15)
