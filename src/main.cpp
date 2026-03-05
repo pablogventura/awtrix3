@@ -124,4 +124,6 @@ void loop()
   {
     MQTTManager.tick();
   }
+  yield();
+  delay(1);
 }
