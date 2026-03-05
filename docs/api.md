@@ -19,6 +19,9 @@
     + [Delete a Custom App](#delete-a-custom-app)
     + [Dismiss Notification](#dismiss-notification)
     + [Switch Apps](#switch-apps)
+    + [Get Apps / Update App List](#get-apps--update-app-list)
+    + [Reorder Apps](#reorder-apps)
+    + [R2-D2 Sound](#r2-d2-sound)
     + [Switch to Specific App](#switch-to-specific-app)
   * [Change Settings](#change-settings)
     + [JSON Properties](#json-properties-1)
@@ -43,7 +46,11 @@ Access various device statistics like battery, RAM, and more:
 | `[PREFIX]/stats/transitions`    | `http://[IP]/api/transitions`      | List of all transition effects                 |
 | `[PREFIX]/stats/loop`           | `http://[IP]/api/loop`             | List of all apps in the loop                   |
 
-> **Note:** MQTT also broadcasts other data, such as button presses and the current app.
+> **Note:** The device also **publishes** the following MQTT topics (under `[PREFIX]/`):
+> - `stats` — JSON with device stats (battery, RAM, brightness, temp, etc.), sent periodically
+> - `stats/currentApp` — Name of the app currently shown
+> - `stats/buttonLeft`, `stats/buttonSelect`, `stats/buttonRight` — Button state: payload `"0"` or `"1"`
+> - `screen` — Array of 24-bit colors (only when someone has requested it via `[PREFIX]/sendscreen`)
 
 ## LiveView
 
@@ -340,6 +347,31 @@ Navigate to the next or preceding app.
 | `[PREFIX]/nextapp`           | `http://[IP]/api/nextapp`          | Empty payload/body | POST        |
 | `[PREFIX]/previousapp`       | `http://[IP]/api/previousapp`      | Empty payload/body | POST        |
 
+### Get Apps / Update App List
+
+| MQTT Topic            | HTTP URL                     | Payload/Body | HTTP Method |
+| --------------------- | ----------------------------- | ------------ | ----------- |
+| `[PREFIX]/apps`       | `http://[IP]/api/apps`        | JSON (POST)  | GET / POST  |
+
+- **GET**: Returns the list of apps in the loop with their icons (JSON).
+- **POST**: Updates the app vector (order/visibility). Send a JSON array of app names in the desired order.
+
+### Reorder Apps
+
+Change the order of apps in the display loop.
+
+| MQTT Topic   | HTTP URL                     | Payload/Body | HTTP Method |
+| ------------ | ----------------------------- | ------------ | ----------- |
+| N/A          | `http://[IP]/api/reorder`     | JSON array of app names in desired order | POST |
+
+### R2-D2 Sound
+
+Play an R2-D2 style sound from a message string.
+
+| MQTT Topic      | HTTP URL                | Payload/Body | HTTP Method |
+| --------------- | ----------------------- | ------------ | ----------- |
+| `[PREFIX]/r2d2` | `http://[IP]/api/r2d2`   | Text string  | POST        |
+
 ### Switch to Specific App
 
 Directly transition to a desired app using its name.
@@ -408,6 +440,7 @@ You can adjust each property in the JSON object according to your preferences. I
 | `MATP`        | boolean                   | Enable or disable the matrix. Similar to `power` endpoint but without the animation.                | `true`/`false`                                     | true    |
 | `VOL`         | integer                   | Allows to set the volume of the buzzer and DFplayer.                                                 | 0–30                                               | true    |
 | `OVERLAY`     | string                    | Sets a global effect overlay (cannot be used with app specific overlays).                            | Varies (see below)                                 | N/A     |
+| `MLANG`       | integer                   | Menu language: 0=English, 1=Deutsch, 2=Español, 3=Français.                                           | 0–3                                                | 0       |
 
 **Color Values**: Can either be an RGB array (e.g., `[255,0,0]`) or a valid 6-digit hexadecimal color value (e.g., `"#FF0000"` for red).
 
