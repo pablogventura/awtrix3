@@ -33,4 +33,7 @@
      - [Drawing](api.md#drawing-instructions)
      - [Colored textfragmentss](api.md#display-text-in-colored-fragments)
      - [App switching](api.md#switch-to-specific-app)
+     - [System Config](api.md#system-config-network-mqtt-ntp-auth)
+     - [Backup & Restore API](api.md#backup-and-restore-api)
+     - [Dev settings](api.md#dev-settings-devjson)
      - [Settings](api.md#change-settings)

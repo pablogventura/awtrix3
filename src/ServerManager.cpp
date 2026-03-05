@@ -354,6 +354,10 @@ void addHandler()
             mws.webserver->send(400, F("text/plain"), F("Invalid JSON"));
             return;
         }
+        if (!doc["files"].is<JsonArray>()) {
+            mws.webserver->send(400, F("text/plain"), F("Missing files array"));
+            return;
+        }
         JsonArray arr = doc["files"].as<JsonArray>();
         for (JsonObject obj : arr) {
             const char *path = obj["path"];
@@ -379,6 +383,14 @@ void addHandler()
                         buf[j++] = (a << 2) | (b >> 4);
                         if (j < outLen && c >= 0) buf[j++] = ((b & 15) << 4) | (c >> 2);
                         if (j < outLen && d >= 0) buf[j++] = ((c & 3) << 6) | d;
+                    }
+                    // Ensure parent directory (and any nested dirs) exist
+                    for (int i = 1; i < (int)p.length(); i++) {
+                        if (p[i] == '/') {
+                            String parent = p.substring(0, i);
+                            if (!LittleFS.exists(parent))
+                                LittleFS.mkdir(parent);
+                        }
                     }
                     File f = LittleFS.open(p, "w");
                     if (f) { f.write(buf, j); f.close(); }
