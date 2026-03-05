@@ -15,8 +15,39 @@
 #include <HTTPClient.h>
 #include "Games/GameManager.h"
 #include <EEPROM.h>
+#include <ArduinoJson.h>
 
 WiFiUDP udp;
+
+// Remove keys that can cause duplicate menu sections in the config page (legacy or duplicate box titles)
+static void removeDuplicateConfigBoxKeys()
+{
+    if (!LittleFS.exists("/DoNotTouch.json"))
+        return;
+    File file = LittleFS.open("/DoNotTouch.json", "r");
+    if (!file)
+        return;
+    size_t sz = file.size();
+    file.close();
+    DynamicJsonDocument doc(sz * 2);
+    file = LittleFS.open("/DoNotTouch.json", "r");
+    if (deserializeJson(doc, file) != DeserializationError::Ok)
+    {
+        file.close();
+        return;
+    }
+    file.close();
+    const char *boxTitles[] = {"Network", "MQTT", "Time", "Icons", "Auth", "Files"};
+    for (const char *title : boxTitles)
+        if (doc.containsKey(title))
+            doc.remove(title);
+    file = LittleFS.open("/DoNotTouch.json", "w");
+    if (file)
+    {
+        serializeJsonPretty(doc, file);
+        file.close();
+    }
+}
 
 unsigned int localUdpPort = 4210;
 char incomingPacket[255];
@@ -226,6 +257,7 @@ void ServerManager_::setup()
     mws.setAuth(AUTH_USER, AUTH_PASS);
     if (isConnected)
     {
+        removeDuplicateConfigBoxKeys();
         mws.addOptionBox("Network");
         mws.addOption("Static IP", NET_STATIC);
         mws.addOption("Local IP", NET_IP);
