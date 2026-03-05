@@ -25,3 +25,5 @@ Hold down the middle button for 2s to exit the current menu and to save your set
 
 The onscreen menu can be displayed in four languages. Choose **LANGUAGE** and cycle with left/right to select **EN** (English), **DE** (Deutsch), **ES** (Español), or **FR** (Français). The setting is saved when you leave the menu (long press middle button).
 
+You can also set the language from the **embedded web**: open `http://<IP>/backup`, click **Language** (or Idioma / Sprache / Langue), then choose the language. The pages **/backup** and **/lang** are shown in the selected language. To force a language in the URL use `?lang=0` (EN), `?lang=1` (DE), `?lang=2` (ES), `?lang=3` (FR), e.g. `http://<IP>/backup?lang=2` for Spanish.
+
