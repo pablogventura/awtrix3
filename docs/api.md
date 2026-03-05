@@ -35,6 +35,19 @@
 
 This API documentation covers various functionalities such as retrieving device statistics, screen mirroring, notifications, custom apps, sound playing, and mood lighting. You can interact with these features via both MQTT and HTTP protocols.
 
+### Payload size limits
+
+To avoid memory issues on the device, the following limits apply:
+
+| Channel   | Maximum payload size | Notes                                                |
+| --------- | -------------------- | ---------------------------------------------------- |
+| **MQTT**  | 12 KB (12288 bytes)  | Messages larger than this are ignored by the device. |
+| **Custom apps / notifications (JSON)** | ~8 KB recommended | Larger payloads may be rejected (JSON buffer overflow). |
+| **Settings (JSON)**   | ~2 KB recommended | Same as above for settings and app vector updates.   |
+| **Draw instructions** | ~8 KB recommended | Array of drawing commands; keep within buffer size.   |
+
+If a JSON payload is too large, the device may respond with an error (e.g. HTTP 500 or no MQTT action) and the request will not be applied.
+
 ## Status Retrieval
 
 Access various device statistics like battery, RAM, and more:

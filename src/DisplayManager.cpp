@@ -445,6 +445,12 @@ bool DisplayManager_::parseCustomPage(const String &name, const char *json, bool
     doc.clear();
     return false;
   }
+  if (doc.overflowed())
+  {
+    DEBUG_PRINTLN(F("Custom page JSON too large for buffer"));
+    doc.clear();
+    return false;
+  }
 
   if (doc.is<JsonObject>())
   {
@@ -768,6 +774,12 @@ bool DisplayManager_::generateNotification(uint8_t source, const char *json)
   if (error)
   {
     DEBUG_PRINTLN(error.c_str());
+    doc.clear();
+    return false;
+  }
+  if (doc.overflowed())
+  {
+    DEBUG_PRINTLN(F("Notification JSON too large for buffer"));
     doc.clear();
     return false;
   }
@@ -1496,6 +1508,11 @@ bool DisplayManager_::switchToApp(const char *json)
     doc.clear();
     return false;
   }
+  if (doc.overflowed())
+  {
+    doc.clear();
+    return false;
+  }
 
   String name = doc["name"].as<String>();
   bool fast = doc["fast"] | false;
@@ -1633,6 +1650,13 @@ void DisplayManager_::updateAppVector(const char *json)
     doc.clear();
     if (DEBUG_MODE)
       DEBUG_PRINTLN(F("Failed to parse json"));
+    return;
+  }
+  if (doc.overflowed())
+  {
+    doc.clear();
+    if (DEBUG_MODE)
+      DEBUG_PRINTLN(F("Apps vector JSON too large for buffer"));
     return;
   }
 
@@ -1784,6 +1808,8 @@ void DisplayManager_::powerStateParse(const char *json)
     setPower((strcmp(json, "true") == 0 || strcmp(json, "1") == 0) ? true : false);
     return;
   }
+  if (doc.overflowed())
+    return;
 
   if (doc.containsKey("power"))
   {
@@ -1885,6 +1911,8 @@ bool DisplayManager_::indicatorParser(uint8_t indicator, const char *json)
   DynamicJsonDocument doc(128);
   DeserializationError error = deserializeJson(doc, json);
   if (error)
+    return false;
+  if (doc.overflowed())
     return false;
 
   if (doc.containsKey("color"))
@@ -2246,6 +2274,12 @@ void DisplayManager_::setNewSettings(const char *json)
       DEBUG_PRINTLN(error.c_str());
     return;
   }
+  if (doc.overflowed())
+  {
+    if (DEBUG_MODE)
+      DEBUG_PRINTLN(F("Settings JSON too large for buffer"));
+    return;
+  }
   if (doc.containsKey("ATIME"))
   {
     long atime = doc["ATIME"].as<int>();
@@ -2515,6 +2549,11 @@ void DisplayManager_::processDrawInstructions(int16_t xOffset, int16_t yOffset, 
     Serial.println("Error parsing JSON draw instructions");
     return;
   }
+  if (doc.overflowed())
+  {
+    Serial.println("Draw instructions JSON too large for buffer");
+    return;
+  }
 
   if (!doc.is<JsonArray>())
   {
@@ -2603,7 +2642,15 @@ void DisplayManager_::processDrawInstructions(int16_t xOffset, int16_t yOffset, 
         int y = params[1].as<int>();
         int width = params[2].as<int>();
         int height = params[3].as<int>();
-        std::vector<uint32_t> bitmap(width * height);
+        // Validate dimensions to prevent OOM: max MATRIX_WIDTH x MATRIX_HEIGHT pixels
+        const int maxBitmapPixels = MATRIX_WIDTH * MATRIX_HEIGHT;
+        if (width <= 0 || height <= 0 || width > MATRIX_WIDTH || height > MATRIX_HEIGHT ||
+            (width * height) > maxBitmapPixels)
+        {
+          Serial.println("Draw bitmap: invalid width/height, skipped");
+          continue;
+        }
+        std::vector<uint32_t> bitmap(static_cast<size_t>(width * height));
         JsonArray colorArray = params[4].as<JsonArray>();
         size_t i = 0;
         for (const auto &color : colorArray)
@@ -2636,6 +2683,8 @@ bool DisplayManager_::moodlight(const char *json)
   DynamicJsonDocument doc(512);
   DeserializationError error = deserializeJson(doc, json);
   if (error)
+    return false;
+  if (doc.overflowed())
     return false;
 
   int brightness = doc["brightness"] | BRIGHTNESS;

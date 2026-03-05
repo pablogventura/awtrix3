@@ -27,16 +27,13 @@ static void removeDuplicateConfigBoxKeys()
     File file = LittleFS.open("/DoNotTouch.json", "r");
     if (!file)
         return;
-    size_t sz = file.size();
+    String content = file.readString();
     file.close();
-    DynamicJsonDocument doc(sz * 2);
-    file = LittleFS.open("/DoNotTouch.json", "r");
-    if (deserializeJson(doc, file) != DeserializationError::Ok)
-    {
-        file.close();
+    if (content.length() == 0)
         return;
-    }
-    file.close();
+    DynamicJsonDocument doc(content.length() * 2);
+    if (deserializeJson(doc, content) != DeserializationError::Ok || doc.overflowed())
+        return;
     const char *boxTitles[] = {"Network", "MQTT", "Time", "Icons", "Auth", "Files"};
     for (const char *title : boxTitles)
         if (doc.containsKey(title))
@@ -392,7 +389,15 @@ void ServerManager_::loadSettings()
         DynamicJsonDocument doc(file.size() * 1.33);
         DeserializationError error = deserializeJson(doc, file);
         if (error)
+        {
+            file.close();
             return;
+        }
+        if (doc.overflowed())
+        {
+            file.close();
+            return;
+        }
 
         NTP_SERVER = doc["NTP Server"].as<String>();
         NTP_TZ = doc["Timezone"].as<String>();

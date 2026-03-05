@@ -11,6 +11,8 @@
 #include "PowerManager.h"
 
 const uint16_t PORT = 1883;
+// Max MQTT payload size to avoid heap exhaustion on ESP32 (bytes)
+#define MQTT_MAX_PAYLOAD_SIZE 12288
 
 WiFiClient espClient;
 HADevice device;
@@ -132,6 +134,8 @@ void processMqttMessage(const String &strTopic, const String &payloadCopy)
                 DEBUG_PRINTLN(F("Failed to parse json"));
             return;
         }
+        if (doc.overflowed())
+            return;
         if (doc.containsKey("power"))
         {
             DisplayManager.setPower(doc["power"].as<bool>());
@@ -149,6 +153,8 @@ void processMqttMessage(const String &strTopic, const String &payloadCopy)
                 DEBUG_PRINTLN(F("Failed to parse json"));
             return;
         }
+        if (doc.overflowed())
+            return;
         if (doc.containsKey("sleep"))
         {
             DisplayManager.setPower(false);
@@ -350,8 +356,21 @@ void onMqttMessage(const char *topic, const uint8_t *payload, uint16_t length)
     if (DEBUG_MODE)
         DEBUG_PRINTF("MQTT message received at topic %s", topic);
 
+    if (length > MQTT_MAX_PAYLOAD_SIZE)
+    {
+        if (DEBUG_MODE)
+            Serial.printf("MQTT payload too large (%u bytes), max %u - ignored\n", length, (unsigned)MQTT_MAX_PAYLOAD_SIZE);
+        return;
+    }
+
     // Create a copy of the payload
     char *payloadCopy = new char[length + 1];
+    if (!payloadCopy)
+    {
+        if (DEBUG_MODE)
+            Serial.println(F("MQTT: failed to allocate payload copy"));
+        return;
+    }
     memcpy(payloadCopy, payload, length);
     payloadCopy[length] = '\0';
 
