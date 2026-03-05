@@ -160,6 +160,8 @@ void addHandler()
                    { DisplayManager.reorderApps(mws.webserver->arg("plain").c_str()); mws.webserver->send(200,F("text/plain"),F("OK")); });
     mws.addHandler("/api/settings", HTTP_GET, []()
                    { mws.webserver->send_P(200, "application/json", DisplayManager.getSettings().c_str()); });
+    mws.addHandler("/api/lang", HTTP_GET, []()
+                   { String j = "{\"lang\":" + String(MENU_LANGUAGE) + "}"; mws.webserver->send(200, "application/json", j); });
     mws.addHandler("/api/custom", HTTP_POST, []()
                    { 
                     if (DisplayManager.parseCustomPage(mws.webserver->arg("name"),mws.webserver->arg("plain").c_str(),false)){
