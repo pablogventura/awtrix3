@@ -2,6 +2,7 @@
 #define AppS_H
 
 #include <map>
+#include <vector>
 #include "MatrixDisplayUi.h"
 #include "effects.h"
 
@@ -54,14 +55,13 @@ struct CustomApp
     bool topText = true;
     bool noScrolling = true;
     bool lifeTimeEnd = false;
-    uint8_t jpegDataBuffer[1000];
-    unsigned int jpegDataSize = 0;
+    std::vector<uint8_t> jpegDataBuffer;
 };
 
 extern std::vector<std::pair<String, AppCallback>> Apps;
 extern String currentCustomApp;
 extern std::map<String, CustomApp> customApps;
-extern void (*customAppCallbacks[20])(FastLED_NeoMatrix *, MatrixDisplayUiState *, int16_t, int16_t, GifPlayer *);
+extern void (*customAppCallbacks[MAX_CUSTOM_APPS])(FastLED_NeoMatrix *, MatrixDisplayUiState *, int16_t, int16_t, GifPlayer *);
 
 CustomApp *getCustomAppByName(String name);
 
@@ -87,25 +87,13 @@ void BatApp(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, i
 
 void ShowCustomApp(String name, FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
 
-// Unattractive to have a function for every customapp which does the same, but currently still no other option found TODO
-void CApp1(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp2(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp3(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp4(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp5(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp6(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp7(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp8(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp9(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp10(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp11(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp12(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp13(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp14(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp15(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp16(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp17(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp18(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp19(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
-void CApp20(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
+#define DECLARE_CAPP(N) \
+    void CApp##N(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, int16_t x, int16_t y, GifPlayer *gifPlayer);
+
+#define MAX_CUSTOM_APPS 20
+DECLARE_CAPP(1)  DECLARE_CAPP(2)  DECLARE_CAPP(3)  DECLARE_CAPP(4)  DECLARE_CAPP(5)
+DECLARE_CAPP(6)  DECLARE_CAPP(7)  DECLARE_CAPP(8)  DECLARE_CAPP(9)  DECLARE_CAPP(10)
+DECLARE_CAPP(11) DECLARE_CAPP(12) DECLARE_CAPP(13) DECLARE_CAPP(14) DECLARE_CAPP(15)
+DECLARE_CAPP(16) DECLARE_CAPP(17) DECLARE_CAPP(18) DECLARE_CAPP(19) DECLARE_CAPP(20)
+
 #endif

@@ -84,7 +84,7 @@ void NotifyOverlay(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, GifPl
     CURRENT_APP = F("Notification");
 
     // Check if notification has an icon
-    bool hasIcon = notifications[0].icon || notifications[0].jpegDataSize > 0;
+    bool hasIcon = notifications[0].icon || !notifications[0].jpegDataBuffer.empty();
 
     // Clear the matrix display
     DisplayManager.drawFilledRect(0, 0, 32, 8, notifications[0].background);
@@ -142,9 +142,9 @@ void NotifyOverlay(FastLED_NeoMatrix *matrix, MatrixDisplayUiState *state, GifPl
             else
             {
                 iconWidth = 8;
-                if (notifications[0].jpegDataSize > 0)
+                if (!notifications[0].jpegDataBuffer.empty())
                 {
-                    DisplayManager.drawJPG(notifications[0].iconPosition + notifications[0].iconOffset, 0, notifications[0].jpegDataBuffer, notifications[0].jpegDataSize);
+                    DisplayManager.drawJPG(notifications[0].iconPosition + notifications[0].iconOffset, 0, notifications[0].jpegDataBuffer.data(), notifications[0].jpegDataBuffer.size());
                 }
                 else
                 {

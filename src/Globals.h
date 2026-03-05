@@ -4,29 +4,27 @@
 #include <FastLED.h>
 #include "effects.h"
  
-#define DEBUG
+#define DEBUG_PRINTLN(x)                \
+  do {                                  \
+    if (DEBUG_MODE) {                   \
+      Serial.print("[");                \
+      Serial.print(millis());           \
+      Serial.print("] [");             \
+      Serial.print(__func__);           \
+      Serial.print("]: ");             \
+      Serial.println(x);               \
+    }                                   \
+  } while (0)
 
-#ifdef DEBUG
-#define DEBUG_PRINTLN(x)    \
-  {                         \
-    Serial.print("[");      \
-    Serial.print(millis()); \
-    Serial.print("] [");    \
-    Serial.print(__func__); \
-    Serial.print("]: ");    \
-    Serial.println(x);      \
-  }
 #define DEBUG_PRINTF(format, ...)                                                        \
-  {                                                                                      \
-    String formattedMessage = "[" + String(millis()) + "] [" + String(__func__) + "]: "; \
-    Serial.print(formattedMessage);                                                      \
-    Serial.printf(format, ##__VA_ARGS__);                                                \
-    Serial.println();                                                                    \
-  }
-#else
-#define DEBUG_PRINTLN(x)
-#define DEBUG_PRINTF(format, ...)
-#endif
+  do {                                                                                   \
+    if (DEBUG_MODE) {                                                                    \
+      String formattedMessage = "[" + String(millis()) + "] [" + String(__func__) + "]: "; \
+      Serial.print(formattedMessage);                                                    \
+      Serial.printf(format, ##__VA_ARGS__);                                              \
+      Serial.println();                                                                  \
+    }                                                                                    \
+  } while (0)
 
 void formatSettings();
 extern const char *uniqueID;

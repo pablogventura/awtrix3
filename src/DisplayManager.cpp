@@ -16,7 +16,6 @@
 #include "Overlays.h"
 #include "Dictionary.h"
 #include <set>
-#include "GifPlayer.h"
 #include <ArtnetWifi.h>
 #include <AwtrixFont.h>
 #include <HTTPClient.h>
@@ -66,7 +65,7 @@ DisplayManager_ &DisplayManager = DisplayManager.getInstance();
 
 void DisplayManager_::setBrightness(int bri)
 {
-  bool wakeup;
+  bool wakeup = false;
   if (!notifications.empty())
   {
     wakeup = notifications[0].wakeup;
@@ -286,7 +285,7 @@ void pushCustomApp(String name, int position)
   {
     int availableCallbackIndex = -1;
 
-    for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < MAX_CUSTOM_APPS; ++i)
     {
       bool callbackUsed = false;
 
@@ -658,7 +657,9 @@ bool DisplayManager_::generateCustomPage(const String &name, JsonObject doc, boo
 
     if (newIconName.length() > 64)
     {
-      customApp.jpegDataSize = decode_base64((const unsigned char *)newIconName.c_str(), customApp.jpegDataBuffer);
+      customApp.jpegDataBuffer.resize(newIconName.length());
+      unsigned int decoded = decode_base64((const unsigned char *)newIconName.c_str(), customApp.jpegDataBuffer.data());
+      customApp.jpegDataBuffer.resize(decoded);
       customApp.isGif = false;
       customApp.icon.close();
       customApp.iconName = "";
@@ -667,7 +668,7 @@ bool DisplayManager_::generateCustomPage(const String &name, JsonObject doc, boo
     }
     else if (customApp.iconName != newIconName)
     {
-      customApp.jpegDataSize = 0;
+      customApp.jpegDataBuffer.clear();
       customApp.iconName = newIconName;
       customApp.icon.close();
       customApp.iconPosition = 0;
@@ -676,7 +677,7 @@ bool DisplayManager_::generateCustomPage(const String &name, JsonObject doc, boo
   }
   else
   {
-    customApp.jpegDataSize = 0;
+    customApp.jpegDataBuffer.clear();
     customApp.icon.close();
     customApp.iconName = "";
     customApp.iconPosition = 0;
@@ -948,12 +949,14 @@ bool DisplayManager_::generateNotification(uint8_t source, const char *json)
 
     if (iconValue.length() > 64)
     {
-      newNotification.jpegDataSize = decode_base64((const unsigned char *)iconValue.c_str(), newNotification.jpegDataBuffer);
+      newNotification.jpegDataBuffer.resize(iconValue.length());
+      unsigned int decoded = decode_base64((const unsigned char *)iconValue.c_str(), newNotification.jpegDataBuffer.data());
+      newNotification.jpegDataBuffer.resize(decoded);
       newNotification.isGif = false;
     }
     else
     {
-      newNotification.jpegDataSize = 0;
+      newNotification.jpegDataBuffer.clear();
       if (LittleFS.exists("/ICONS/" + iconValue + ".jpg"))
       {
         newNotification.isGif = false;
@@ -976,7 +979,7 @@ bool DisplayManager_::generateNotification(uint8_t source, const char *json)
   {
     fs::File nullPointer;
     newNotification.icon = nullPointer;
-    newNotification.jpegDataSize = 0;
+    newNotification.jpegDataBuffer.clear();
     newNotification.isGif = false;
   }
 

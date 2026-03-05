@@ -46,7 +46,7 @@ bool stopBoot;
 
 void BootAnimation(void *parameter)
 {
-  const TickType_t xDelay = 1 / portTICK_PERIOD_MS;
+  const TickType_t xDelay = pdMS_TO_TICKS(16);
   while (true)
   {
     if (StopTask)

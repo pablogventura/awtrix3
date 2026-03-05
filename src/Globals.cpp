@@ -7,21 +7,19 @@
 
 Preferences Settings;
 
-char *getID()
+const char *getID()
 {
+    static char macStr[24];
     uint8_t mac[6];
     WiFi.macAddress(mac);
-    char *macStr = new char[24];
-    snprintf(macStr, 24, "awtrix_%02x%02x%02x", mac[3], mac[4], mac[5]);
-    if (DEBUG_MODE)
-        DEBUG_PRINTLN(F("Starting filesystem"));
+    snprintf(macStr, sizeof(macStr), "awtrix_%02x%02x%02x", mac[3], mac[4], mac[5]);
+    DEBUG_PRINTLN(F("Generated device ID"));
     return macStr;
 }
 
 void startLittleFS()
 {
-    if (DEBUG_MODE)
-        DEBUG_PRINTLN(F("Starting filesystem"));
+    DEBUG_PRINTLN(F("Starting filesystem"));
     if (LittleFS.begin())
     {
         if (LittleFS.exists("/config.json"))
@@ -35,13 +33,11 @@ void startLittleFS()
         LittleFS.mkdir("/ICONS");
         LittleFS.mkdir("/PALETTES");
         LittleFS.mkdir("/CUSTOMAPPS");
-        if (DEBUG_MODE)
-            DEBUG_PRINTLN(F("Filesystem started"));
+        DEBUG_PRINTLN(F("Filesystem started"));
     }
     else
     {
-        if (DEBUG_MODE)
-            DEBUG_PRINTLN(F("Filesystem corrupt. Formatting..."));
+        DEBUG_PRINTLN(F("Filesystem corrupt. Formatting..."));
         LittleFS.format();
         ESP.restart();
     }
@@ -49,8 +45,7 @@ void startLittleFS()
 
 void loadDevSettings()
 {
-    if (DEBUG_MODE)
-        DEBUG_PRINTLN("Loading Devsettings");
+    DEBUG_PRINTLN("Loading Devsettings");
     if (LittleFS.exists("/dev.json"))
     {
         File file = LittleFS.open("/dev.json", "r");
@@ -58,13 +53,11 @@ void loadDevSettings()
         DeserializationError error = deserializeJson(doc, file);
         if (error)
         {
-            if (DEBUG_MODE)
-                DEBUG_PRINTLN(F("Failed to read dev settings"));
+            DEBUG_PRINTLN(F("Failed to read dev settings"));
             return;
         }
 
-        if (DEBUG_MODE)
-            DEBUG_PRINTF("%i dev settings found", doc.size());
+        DEBUG_PRINTF("%i dev settings found", doc.size());
 
         if (doc.containsKey("bootsound"))
         {
@@ -234,8 +227,7 @@ void loadDevSettings()
     }
     else
     {
-        if (DEBUG_MODE)
-            DEBUG_PRINTLN("Devsettings not found");
+        DEBUG_PRINTLN("Devsettings not found");
     }
 }
 
@@ -249,8 +241,7 @@ void formatSettings()
 void loadSettings()
 {
     startLittleFS();
-    if (DEBUG_MODE)
-        DEBUG_PRINTLN(F("Loading Usersettings"));
+    DEBUG_PRINTLN(F("Loading Usersettings"));
     Settings.begin("awtrix", false);
     BRIGHTNESS = Settings.getUInt("BRI", 120);
     AUTO_BRIGHTNESS = Settings.getBool("ABRI", false);
@@ -299,8 +290,7 @@ void loadSettings()
 
 void saveSettings()
 {
-    if (DEBUG_MODE)
-        DEBUG_PRINTLN(F("Saving usersettings"));
+    DEBUG_PRINTLN(F("Saving usersettings"));
     Settings.begin("awtrix", false);
     Settings.putUInt("CHCOL", CALENDAR_HEADER_COLOR);
     Settings.putUInt("CTCOL", CALENDAR_TEXT_COLOR);

@@ -82,8 +82,7 @@ uint32_t getColorFromJsonVariant(JsonVariant colorVariant, uint32_t defaultColor
             uint8_t h = colorArray[1];
             uint8_t s = colorArray[2];
             uint8_t v = colorArray[3];
-            uint8_t r = 0, g = 0, b = 0;
-            return (r << 16) | (g << 8) | b; // Ignoring alpha channel
+            return hsvToRgb(h, s, v);
         }
     }
 
@@ -163,24 +162,20 @@ byte utf8ascii(byte ascii)
         break;
 
     case 0xC3:
-        // polish
         if (ascii == 0xB3) return 0x6F;
         if (ascii == 0x93) return 0x4F;
-
-        return (ascii | 0xC0); // - 34;
-        break;
+        return (ascii | 0xC0);
 
     case 0xC4:
-        // polish
         if (ascii == 0x85) return 0x61;
         if (ascii == 0x84) return 0x41;
         if (ascii == 0x87) return 0x63;
         if (ascii == 0x86) return 0x43;
         if (ascii == 0x99) return 0x65;
         if (ascii == 0x98) return 0x45;
-    
+        break;
+
     case 0xC5:
-        // polish
         if (ascii == 0x82) return 0x6C;
         if (ascii == 0x81) return 0x4C;
         if (ascii == 0x84) return 0x6E;
@@ -191,47 +186,37 @@ byte utf8ascii(byte ascii)
         if (ascii == 0xBA) return 0x7A;
         if (ascii == 0xB9) return 0x5A;
         if (ascii == 0x9B) return 0x73;
+        break;
 
     case 0x82:
         if (ascii == 0xAC)
-            // return (0xEA);
             return (0xB6);
+        break;
 
     case 0xD0:
-        if (ascii == 0x81) // Ё
-            return 0x84;
-        if (ascii == 0x84) // Є
-            return 0xA0;
-        if (ascii == 0x86) // І
-            return 0xA1;
-        if (ascii == 0x87) // Ї
-            return 0xEF;
-
+        if (ascii == 0x81) return 0x84;
+        if (ascii == 0x84) return 0xA0;
+        if (ascii == 0x86) return 0xA1;
+        if (ascii == 0x87) return 0xEF;
         if (ascii >= 0x90 && ascii <= 0xAF)
-            return (ascii)-17;
-
+            return (ascii) - 17;
         if (ascii >= 0xB0 && ascii <= 0xBF)
-            return (ascii)-49;
+            return (ascii) - 49;
+        break;
 
     case 0xD1:
-        if (ascii == 0x91) // Ё
-            return 0x84;
-        if (ascii == 0x94) // Є
-            return 0xA0;
-        if (ascii == 0x96) // І
-            return 0xA1;
-        if (ascii == 0x97) // Ї
-            return 0xEF;
-
+        if (ascii == 0x91) return 0x84;
+        if (ascii == 0x94) return 0xA0;
+        if (ascii == 0x96) return 0xA1;
+        if (ascii == 0x97) return 0xEF;
         if (ascii >= 0x80 && ascii <= 0x8F)
             return (ascii) + 15;
+        break;
 
     case 0xD2:
-        if (ascii == 0x90) // Ґ
-            return 0x9F;
-
-        if (ascii == 0x91) // ґ
-            return 0x9F;
+        if (ascii == 0x90) return 0x9F;
+        if (ascii == 0x91) return 0x9F;
+        break;
     }
     return (0);
 }
