@@ -196,6 +196,26 @@ void processMqttMessage(const String &strTopic, const String &payloadCopy)
         return;
     }
 
+    if (strTopic.equals(MQTT_PREFIX + "/erase"))
+    {
+        if (DEBUG_MODE)
+            DEBUG_PRINTLN("ERASE COMMAND RECEIVED");
+        ServerManager.erase();
+        delay(200);
+        ESP.restart();
+        return;
+    }
+
+    if (strTopic.equals(MQTT_PREFIX + "/resetSettings"))
+    {
+        if (DEBUG_MODE)
+            DEBUG_PRINTLN("RESET SETTINGS COMMAND RECEIVED");
+        formatSettings();
+        delay(200);
+        ESP.restart();
+        return;
+    }
+
     if (strTopic.equals(MQTT_PREFIX + "/sound"))
     {
         PeripheryManager.parseSound(payloadCopy.c_str());
@@ -418,6 +438,8 @@ void onMqttConnected()
         "/timeformat",
         "/dateformat",
         "/reboot",
+        "/erase",
+        "/resetSettings",
         "/moodlight",
         "/sound",
         "/rtttl",

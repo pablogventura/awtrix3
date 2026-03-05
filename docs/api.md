@@ -403,6 +403,48 @@ Directly transition to a desired app using its name.
 For custom apps, employ the name you designated in the topic or HTTP parameter. In MQTT, if `[PREFIX]/custom/test` is your topic, then `test` would be the app's name.
 
 
+## System Config (Network, MQTT, NTP, Auth)
+
+Read or update the system configuration stored in `DoNotTouch.json` (same data as the web setup page). Useful for automation and scripts.
+
+| MQTT Topic   | HTTP URL                     | Payload/Body | HTTP Method |
+| ------------ | ----------------------------- | ------------ | ----------- |
+| N/A          | `http://[IP]/api/config`     | -            | GET         |
+| N/A          | `http://[IP]/api/config`     | JSON         | POST        |
+
+- **GET**: Returns the current system config as JSON (Broker, Port, Username, Password, NTP Server, Timezone, Static IP, Local IP, Gateway, Subnet, Auth Username, Auth Password, etc.).
+- **POST**: Send a JSON object with the keys you want to update (e.g. `{"Broker":"mqtt.local","Port":1883}`). Existing keys are merged; then settings are reloaded. Use the same key names as returned by GET.
+
+---
+
+## Backup and Restore (API)
+
+Backup and restore the device filesystem via API for scripting (e.g. cron, Home Assistant).
+
+| MQTT Topic   | HTTP URL                     | Payload/Body | HTTP Method |
+| ------------ | ----------------------------- | ------------ | ----------- |
+| N/A          | `http://[IP]/api/backup`     | -            | GET         |
+| N/A          | `http://[IP]/api/restore`    | JSON         | POST        |
+
+- **GET /api/backup**: Returns a JSON object `{"files":[{"path":"/path/to/file","content":"<base64>"}, ...]}` with all files from the device (recursive). You can build a ZIP client-side from this.
+- **POST /api/restore**: Accepts the same JSON format: `{"files":[{"path":"/path","content":"<base64>"}, ...]}`. Each file is written to the device. Then reboot if needed. For large restores, the web Backup page (ZIP upload) may be more practical.
+
+---
+
+## Dev settings (dev.json)
+
+Read or update the developer/advanced settings stored in `dev.json` (e.g. `button_callback`, `hostname`, `min_brightness`). Many options only take effect after reboot. See [Dev Features](dev.md) for all keys.
+
+| MQTT Topic   | HTTP URL                     | Payload/Body | HTTP Method |
+| ------------ | ----------------------------- | ------------ | ----------- |
+| N/A          | `http://[IP]/api/dev`        | -            | GET         |
+| N/A          | `http://[IP]/api/dev`        | JSON         | PUT / POST  |
+
+- **GET**: Returns the current `dev.json` as JSON (or `{}` if the file does not exist).
+- **PUT / POST**: Send a JSON object with keys to add or update. Merged with existing `dev.json`. Reboot may be required for some options.
+
+---
+
 ## Change Settings
 
 Adjust various settings related to the app display.
@@ -524,13 +566,13 @@ If you need to restart the Awtrix:
 #### Erase Awtrix
 **WARNING**: This action will format the flash memory and EEPROM but will not modify the WiFi Settings. It essentially serves as a factory reset.
 
-| MQTT Topic      | HTTP URL                      | Payload/Body  | HTTP Method |
-|-----------------|-------------------------------|---------------|-------------|
-| `N/A`           | `http://[IP]/api/erase`       | -             | POST        |
+| MQTT Topic           | HTTP URL                      | Payload/Body  | HTTP Method |
+|----------------------|-------------------------------|---------------|-------------|
+| `[PREFIX]/erase`     | `http://[IP]/api/erase`       | -             | POST        |
 
 #### Clear Settings
 **WARNING**: This action will reset all settings from the settings API. It does not reset the flash files and WiFi Settings.
 
-| MQTT Topic      | HTTP URL                        | Payload/Body  | HTTP Method |
-|-----------------|---------------------------------|---------------|-------------|
-| `N/A`           | `http://[IP]/api/resetSettings` | -             | POST        |
+| MQTT Topic                  | HTTP URL                        | Payload/Body  | HTTP Method |
+|-----------------------------|---------------------------------|---------------|-------------|
+| `[PREFIX]/resetSettings`    | `http://[IP]/api/resetSettings` | -             | POST        |

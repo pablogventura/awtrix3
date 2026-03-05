@@ -14,7 +14,8 @@ The web interface provides essential settings primarily needed for the initial s
 | **Files**      | Access the integrated file manager to upload and download data, such as icons or RTTTL melodies.                                                                                              |
 | **Update**     | Manually upload an update in the "Firmware" section. The required .bin file can be found in the [AWTRIX 3 release section](https://github.com/Blueforcer/awtrix3/releases).                     |
 | **LiveView**   | View your AWTRIX matrix live, take screenshots, and create animated GIFs.                                                                                                                     |
-| **Backup**     | The backup system compiles the entire flash memory into a zip file for download. You can restore this backup on another AWTRIX device.                                                        |
+| **Backup**     | The backup system compiles the entire flash memory into a zip file for download. You can restore this backup on another AWTRIX device. From this page you can also open **Display Settings** and **Language**. |
+| **Display Settings** | At `http://[IP]/settings`: configure brightness, transitions, time/date format, apps on/off, volume, and other display options (uses `GET/POST /api/settings`). |
 | **Docs**       | A link to the official AWTRIX 3 documentation.                                                                                                                                                |
 | **Flows**      | A link to the AWTRIX Flows website.                                                                                                                                                           |
 

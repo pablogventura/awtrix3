@@ -16,6 +16,7 @@
 #include "Games/GameManager.h"
 #include <EEPROM.h>
 #include <ArduinoJson.h>
+#include <functional>
 
 WiFiUDP udp;
 
@@ -234,6 +235,221 @@ void addHandler()
                     } });
     mws.addHandler("/api/r2d2", HTTP_POST, []()
                    { PeripheryManager.r2d2(mws.webserver->arg("plain").c_str()); mws.webserver->send(200,F("text/plain"),F("OK")); });
+
+    // GET /api/config - return system config (DoNotTouch.json) for automation
+    mws.addHandler("/api/config", HTTP_GET, []() {
+        if (!LittleFS.exists("/DoNotTouch.json")) {
+            mws.webserver->send(404, F("application/json"), F("{\"error\":\"No config\"}"));
+            return;
+        }
+        File file = LittleFS.open("/DoNotTouch.json", "r");
+        if (!file) {
+            mws.webserver->send(500, F("application/json"), F("{\"error\":\"Cannot read\"}"));
+            return;
+        }
+        String content = file.readString();
+        file.close();
+        mws.webserver->send(200, F("application/json"), content);
+    });
+
+    // POST /api/config - update system config (merge with existing), then reload
+    mws.addHandler("/api/config", HTTP_POST, []() {
+        String body = mws.webserver->arg("plain");
+        if (body.length() == 0) {
+            mws.webserver->send(400, F("text/plain"), F("Empty body"));
+            return;
+        }
+        DynamicJsonDocument req(1024);
+        if (deserializeJson(req, body) != DeserializationError::Ok || req.overflowed()) {
+            mws.webserver->send(400, F("text/plain"), F("Invalid JSON"));
+            return;
+        }
+        DynamicJsonDocument doc(1024);
+        if (LittleFS.exists("/DoNotTouch.json")) {
+            File f = LittleFS.open("/DoNotTouch.json", "r");
+            if (f) {
+                deserializeJson(doc, f);
+                f.close();
+            }
+        }
+        for (JsonPair kv : req.as<JsonObject>())
+            doc[kv.key()] = kv.value();
+        File f = LittleFS.open("/DoNotTouch.json", "w");
+        if (!f) {
+            mws.webserver->send(500, F("text/plain"), F("Cannot write"));
+            return;
+        }
+        serializeJsonPretty(doc, f);
+        f.close();
+        ServerManager.loadSettings();
+        mws.webserver->send(200, F("text/plain"), F("OK"));
+    });
+
+    // GET /api/backup - return JSON with all files (path + base64 content) for scripting
+    mws.addHandler("/api/backup", HTTP_GET, []() {
+        String out = F("{\"files\":[");
+        bool first = true;
+        File root = LittleFS.open("/", "r");
+        if (!root || !root.isDirectory()) {
+            mws.webserver->send(500, F("application/json"), F("{\"error\":\"FS\"}"));
+            return;
+        }
+        std::function<void(File &, const String &)> collect = [&](File &dir, const String &path) {
+            File entry = dir.openNextFile();
+            while (entry) {
+                String name = entry.name();
+                if (name.lastIndexOf('/') >= 0) name = name.substring(name.lastIndexOf('/') + 1);
+                String fullPath = path + name;
+                if (entry.isDirectory()) {
+                    File sub = LittleFS.open(fullPath, "r");
+                    if (sub) { collect(sub, fullPath + "/"); sub.close(); }
+                } else {
+                    size_t len = entry.size();
+                    if (len > 0 && len < 65536) {
+                        uint8_t *buf = (uint8_t *)malloc(len);
+                        if (buf) {
+                            entry.read(buf, len);
+                            size_t b64len = (len + 2) / 3 * 4;
+                            char *b64 = (char *)malloc(b64len + 1);
+                            if (b64) {
+                                static const char enc[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+                                for (size_t i = 0, j = 0; i < len; i += 3, j += 4) {
+                                    uint32_t v = buf[i] << 16;
+                                    if (i + 1 < len) v |= buf[i + 1] << 8;
+                                    if (i + 2 < len) v |= buf[i + 2];
+                                    b64[j] = enc[(v >> 18) & 63]; b64[j + 1] = enc[(v >> 12) & 63];
+                                    b64[j + 2] = (i + 1 < len) ? enc[(v >> 6) & 63] : '=';
+                                    b64[j + 3] = (i + 2 < len) ? enc[v & 63] : '=';
+                                }
+                                b64[b64len] = '\0';
+                                String p = fullPath; p.replace("\\", "\\\\"); p.replace("\"", "\\\"");
+                                if (!first) out += ',';
+                                out += "{\"path\":\"" + p + "\",\"content\":\"" + String(b64) + "\"}";
+                                first = false;
+                                free(b64);
+                            }
+                            free(buf);
+                        }
+                    }
+                }
+                entry.close();
+                entry = dir.openNextFile();
+            }
+        };
+        collect(root, "/");
+        root.close();
+        out += F("]}");
+        mws.webserver->send(200, F("application/json"), out);
+    });
+
+    // POST /api/restore - accept JSON { "files": [ {"path":"/x","content":"base64"} ] } and write files
+    mws.addHandler("/api/restore", HTTP_POST, []() {
+        String body = mws.webserver->arg("plain");
+        if (body.length() == 0) {
+            mws.webserver->send(400, F("text/plain"), F("Empty body"));
+            return;
+        }
+        DynamicJsonDocument doc(12288);
+        if (deserializeJson(doc, body) != DeserializationError::Ok || doc.overflowed()) {
+            mws.webserver->send(400, F("text/plain"), F("Invalid JSON"));
+            return;
+        }
+        JsonArray arr = doc["files"].as<JsonArray>();
+        for (JsonObject obj : arr) {
+            const char *path = obj["path"];
+            const char *content = obj["content"];
+            if (!path || !content) continue;
+            String p(path);
+            if (p.length() == 0 || p == "/") continue;
+            if (!p.startsWith("/")) p = "/" + p;
+            size_t clen = strlen(content);
+            size_t outLen = (clen / 4) * 3;
+            if (clen >= 4 && content[clen - 1] == '=') { outLen--; if (content[clen - 2] == '=') outLen--; }
+            if (outLen > 0 && outLen < 32768) {
+                uint8_t *buf = (uint8_t *)malloc(outLen);
+                if (buf) {
+                    static const int T[128] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,-1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1};
+                    size_t j = 0;
+                    for (size_t i = 0; i < clen && j < outLen; i += 4) {
+                        int a = (content[i] & 127) < 128 ? T[content[i] & 127] : -1;
+                        int b = (i+1 < clen && (content[i+1] & 127) < 128) ? T[content[i+1] & 127] : -1;
+                        int c = (i+2 < clen && (content[i+2] & 127) < 128) ? T[content[i+2] & 127] : -1;
+                        int d = (i+3 < clen && (content[i+3] & 127) < 128) ? T[content[i+3] & 127] : -1;
+                        if (a < 0 || b < 0) break;
+                        buf[j++] = (a << 2) | (b >> 4);
+                        if (j < outLen && c >= 0) buf[j++] = ((b & 15) << 4) | (c >> 2);
+                        if (j < outLen && d >= 0) buf[j++] = ((c & 3) << 6) | d;
+                    }
+                    File f = LittleFS.open(p, "w");
+                    if (f) { f.write(buf, j); f.close(); }
+                    free(buf);
+                }
+            }
+        }
+        mws.webserver->send(200, F("text/plain"), F("OK"));
+    });
+
+    // GET /api/dev - return dev.json for automation
+    mws.addHandler("/api/dev", HTTP_GET, []() {
+        if (!LittleFS.exists("/dev.json")) {
+            mws.webserver->send(200, F("application/json"), F("{}"));
+            return;
+        }
+        File file = LittleFS.open("/dev.json", "r");
+        if (!file) {
+            mws.webserver->send(500, F("application/json"), F("{\"error\":\"Cannot read\"}"));
+            return;
+        }
+        String content = file.readString();
+        file.close();
+        mws.webserver->send(200, F("application/json"), content);
+    });
+
+    // PUT/POST /api/dev - merge and save dev.json (reboot may be required for some options)
+    mws.addHandler("/api/dev", HTTP_PUT, []() {
+        String body = mws.webserver->arg("plain");
+        DynamicJsonDocument doc(1024);
+        if (LittleFS.exists("/dev.json")) {
+            File f = LittleFS.open("/dev.json", "r");
+            if (f) { deserializeJson(doc, f); f.close(); }
+        }
+        if (body.length() > 0) {
+            DynamicJsonDocument req(1024);
+            if (deserializeJson(req, body) == DeserializationError::Ok && !req.overflowed())
+                for (JsonPair kv : req.as<JsonObject>()) doc[kv.key()] = kv.value();
+        }
+        File f = LittleFS.open("/dev.json", "w");
+        if (!f) {
+            mws.webserver->send(500, F("text/plain"), F("Cannot write"));
+            return;
+        }
+        serializeJsonPretty(doc, f);
+        f.close();
+        mws.webserver->send(200, F("text/plain"), F("OK"));
+    });
+    mws.addHandler("/api/dev", HTTP_POST, []() {
+        String body = mws.webserver->arg("plain");
+        DynamicJsonDocument doc(1024);
+        if (LittleFS.exists("/dev.json")) {
+            File f = LittleFS.open("/dev.json", "r");
+            if (f) { deserializeJson(doc, f); f.close(); }
+        }
+        if (body.length() > 0) {
+            DynamicJsonDocument req(1024);
+            if (deserializeJson(req, body) == DeserializationError::Ok && !req.overflowed())
+                for (JsonPair kv : req.as<JsonObject>()) doc[kv.key()] = kv.value();
+        }
+        File f = LittleFS.open("/dev.json", "w");
+        if (!f) {
+            mws.webserver->send(500, F("text/plain"), F("Cannot write"));
+            return;
+        }
+        serializeJsonPretty(doc, f);
+        f.close();
+        mws.webserver->send(200, F("text/plain"), F("OK"));
+    });
+
+    mws.addHandler("/settings", HTTP_GET, []() { mws.webserver->send(200, F("text/html"), settings_html); });
 }
 
 void ServerManager_::setup()
