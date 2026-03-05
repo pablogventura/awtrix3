@@ -1,6 +1,7 @@
 #include <MenuManager.h>
 #include <Arduino.h>
 #include <Globals.h>
+#include "MenuManager_i18n.h"
 #include <ServerManager.h>
 #include <DisplayManager.h>
 #include <PeripheryManager.h>
@@ -19,6 +20,7 @@ enum MenuState
     TimeFormatMenu,
     DateFormatMenu,
     WeekdayMenu,
+    LanguageMenu,
     TempMenu,
     Appmenu,
     SoundMenu,
@@ -36,12 +38,21 @@ const char *menuItems[] PROGMEM = {
     "TIME",
     "DATE",
     "WEEKDAY",
+    "LANGUAGE",
     "TEMP",
     "APPS",
     "SOUND",
     "VOLUME",
     "UPDATE"};
 
+
+
+const char *menuItems_DE[] PROGMEM = {
+    "HELL", "FARBE", "WECHSEL", "T-TEMPO", "APPTIME", "ZEIT", "DATUM", "WOCHE", "SPRACHE", "TEMP", "APPS", "TON", "LAUTST", "UPDATE"};
+const char *menuItems_ES[] PROGMEM = {
+    "LUM", "COLOR", "CAMBIO", "T-VELOC", "APPTIME", "HORA", "FECHA", "SEMANA", "IDIOMA", "TEMP", "APPS", "SONIDO", "VOL", "ACTUALIZ"};
+const char *menuItems_FR[] PROGMEM = {
+    "LUM", "COULEUR", "CHANGER", "V-VITE", "APPTIME", "HEURE", "DATE", "SEMAINE", "LANGUE", "TEMP", "APPS", "SON", "VOL", "MAJ"};
 int8_t menuIndex = 0;
 uint8_t menuItemCount = MaxMenu - 1;
 
@@ -133,7 +144,7 @@ String MenuManager_::menutext()
     {
     case MainMenu:
         DisplayManager.drawMenuIndicator(menuIndex, menuItemCount, 0xF80000);
-        return menuItems[menuIndex];
+        return getMenuItem(menuIndex);
     case BrightnessMenu:
         return AUTO_BRIGHTNESS ? "AUTO" : String(BRIGHTNESS_PERCENT) + "%";
     case ColorMenu:
@@ -141,9 +152,9 @@ String MenuManager_::menutext()
         DisplayManager.setTextColor(textColors[currentColor]);
         return "0X" + String(textColors[currentColor], HEX);
     case SwitchMenu:
-        return AUTO_TRANSITION ? "ON" : "OFF";
+        return AUTO_TRANSITION ? getStrOn() : getStrOff();
     case SoundMenu:
-        return SOUND_ACTIVE ? "ON" : "OFF";
+        return SOUND_ACTIVE ? getStrOn() : getStrOff();
     case TspeedMenu:
         return String(TIME_PER_TRANSITION / 1000.0, 1) + "s";
     case AppTimeMenu:
@@ -169,7 +180,10 @@ String MenuManager_::menutext()
         strftime(t, sizeof(t), dateFormat[dateFormatIndex], timer_localtime());
         return t;
     case WeekdayMenu:
-        return START_ON_MONDAY ? "MON" : "SUN";
+        return START_ON_MONDAY ? getStrMon() : getStrSun();
+    case LanguageMenu:
+        DisplayManager.drawMenuIndicator(MENU_LANGUAGE, 4, 0xFBC000);
+        return getLangName();
     case TempMenu:
         return IS_CELSIUS ? "°C" : "°F";
     case Appmenu:
@@ -178,20 +192,20 @@ String MenuManager_::menutext()
         {
         case 0:
             DisplayManager.drawBMP(0, 0, icon_13, 8, 8);
-            return SHOW_TIME ? "ON" : "OFF";
+            return SHOW_TIME ? getStrOn() : getStrOff();
         case 1:
             DisplayManager.drawBMP(0, 0, icon_1158, 8, 8);
-            return SHOW_DATE ? "ON" : "OFF";
+            return SHOW_DATE ? getStrOn() : getStrOff();
         case 2:
             DisplayManager.drawBMP(0, 0, icon_234, 8, 8);
-            return SHOW_TEMP ? "ON" : "OFF";
+            return SHOW_TEMP ? getStrOn() : getStrOff();
         case 3:
             DisplayManager.drawBMP(0, 0, icon_2075, 8, 8);
-            return SHOW_HUM ? "ON" : "OFF";
+            return SHOW_HUM ? getStrOn() : getStrOff();
 #ifndef awtrix2_upgrade
         case 4:
             DisplayManager.drawBMP(0, 0, icon_1486, 8, 8);
-            return SHOW_BAT ? "ON" : "OFF";
+            return SHOW_BAT ? getStrOn() : getStrOff();
 #endif
         default:
             break;
@@ -200,7 +214,7 @@ String MenuManager_::menutext()
     case VolumeMenu:
         if (!(DFPLAYER_ACTIVE || BUZ_VOL))
         {
-            return "N/A";
+            return getStrNa();
         }
         else
         {
@@ -252,6 +266,9 @@ void MenuManager_::rightButton()
         break;
     case WeekdayMenu:
         START_ON_MONDAY = !START_ON_MONDAY;
+        break;
+    case LanguageMenu:
+        MENU_LANGUAGE = (MENU_LANGUAGE + 1) % 4;
         break;
     case SoundMenu:
         SOUND_ACTIVE = !SOUND_ACTIVE;
@@ -314,6 +331,9 @@ void MenuManager_::leftButton()
         break;
     case WeekdayMenu:
         START_ON_MONDAY = !START_ON_MONDAY;
+        break;
+    case LanguageMenu:
+        MENU_LANGUAGE = (MENU_LANGUAGE == 0) ? 3 : MENU_LANGUAGE - 1;
         break;
     case TempMenu:
         IS_CELSIUS = !IS_CELSIUS;
@@ -443,6 +463,7 @@ void MenuManager_::selectButtonLong()
             DATE_FORMAT = dateFormat[dateFormatIndex];
             saveSettings();
         case WeekdayMenu:
+        case LanguageMenu:
         case SoundMenu:
         case TempMenu:
             saveSettings();

@@ -270,6 +270,7 @@ void loadSettings()
     START_ON_MONDAY = Settings.getBool("SOM", true);
     BLOCK_NAVIGATION = Settings.getBool("BLOCKN", false);
     IS_CELSIUS = Settings.getBool("CEL", true);
+    MENU_LANGUAGE = Settings.getUInt("MLANG", 0);
     SHOW_TIME = Settings.getBool("TIM", true);
     SHOW_DATE = Settings.getBool("DAT", false);
     SHOW_TEMP = Settings.getBool("TEMP", true);
@@ -319,6 +320,7 @@ void saveSettings()
     Settings.putString("DFORMAT", DATE_FORMAT);
     Settings.putBool("SOM", START_ON_MONDAY);
     Settings.putBool("CEL", IS_CELSIUS);
+    Settings.putUInt("MLANG", MENU_LANGUAGE);
     Settings.putBool("TIM", SHOW_TIME);
     Settings.putBool("DAT", SHOW_DATE);
     Settings.putBool("TEMP", SHOW_TEMP);
@@ -394,6 +396,7 @@ String TIME_FORMAT = "%H:%M:%S";
 String DATE_FORMAT = "%d.%m.%y";
 int BACKGROUND_EFFECT = -1;
 bool START_ON_MONDAY;
+uint8_t MENU_LANGUAGE = 0;
 
 // Matrix States
 bool AUTO_TRANSITION = false;

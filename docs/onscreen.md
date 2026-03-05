@@ -17,8 +17,11 @@ Hold down the middle button for 2s to exit the current menu and to save your set
 | `TIME` | Allows selection of time format. |
 | `DATE` | Allows selection of date format. |
 | `WEEKDAY` | Allows selection of start of week. |
+| `LANGUAGE` | Menu language: English (EN), Deutsch (DE), Español (ES), Français (FR). |
 | `TEMP` | Allows selection of temperature system (°C or °F).  |
 | `APPS` | Allows to enable or disable internal apps  |
 | `SOUND` | Allows to enable or disable sound output   |
 | `UPDATE` | Check and download new firmware if available. |
+
+The onscreen menu can be displayed in four languages. Choose **LANGUAGE** and cycle with left/right to select **EN** (English), **DE** (Deutsch), **ES** (Español), or **FR** (Français). The setting is saved when you leave the menu (long press middle button).
 

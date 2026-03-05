@@ -88,6 +88,7 @@ extern String TIME_FORMAT;
 extern String DATE_FORMAT;
 extern bool START_ON_MONDAY;
 extern bool IS_CELSIUS;
+extern uint8_t MENU_LANGUAGE;  // 0=EN, 1=DE, 2=ES, 3=FR
   
 #define TEMP_SENSOR_TYPE_NONE 0
 #define TEMP_SENSOR_TYPE_BME280 1

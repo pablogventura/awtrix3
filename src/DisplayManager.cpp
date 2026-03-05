@@ -2038,6 +2038,7 @@ String DisplayManager_::getSettings()
   doc["DFORMAT"] = DATE_FORMAT;
   doc["SOM"] = START_ON_MONDAY;
   doc["CEL"] = IS_CELSIUS;
+  doc["MLANG"] = MENU_LANGUAGE;
   doc["BLOCKN"] = BLOCK_NAVIGATION;
   doc["MAT"] = MATRIX_LAYOUT;
   doc["SOUND"] = SOUND_ACTIVE;
@@ -2120,6 +2121,7 @@ void DisplayManager_::setNewSettings(const char *json)
   SCROLL_SPEED = doc.containsKey("SSPEED") ? doc["SSPEED"] : SCROLL_SPEED;
   IS_CELSIUS = doc.containsKey("CEL") ? doc["CEL"] : IS_CELSIUS;
   START_ON_MONDAY = doc.containsKey("SOM") ? doc["SOM"].as<bool>() : START_ON_MONDAY;
+  MENU_LANGUAGE = doc.containsKey("MLANG") ? doc["MLANG"].as<uint8_t>() : MENU_LANGUAGE;
   MATRIX_OFF = doc.containsKey("MATP") ? !doc["MATP"].as<bool>() : MATRIX_OFF;
   TIME_FORMAT = doc.containsKey("TFORMAT") ? doc["TFORMAT"].as<String>() : TIME_FORMAT;
   GAMMA = doc.containsKey("GAMMA") ? doc["GAMMA"].as<float>() : GAMMA;
