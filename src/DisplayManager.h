@@ -100,6 +100,16 @@ public:
     void setTextColor(uint32_t color);
     void matrixPrint(double number, uint8_t digits);
     void setCustomAppColors(uint32_t color);
+    // Pixel calibration mode
+    bool isCalibrationActive();
+    void enterCalibration();
+    void exitCalibration();
+    void calibrationLeft();
+    void calibrationRight();
+    void calibrationSelect();
+    void calibrationSelectLong();
+    void loadPixelGains();
+    void savePixelGains();
 };
 
 extern DisplayManager_ &DisplayManager;

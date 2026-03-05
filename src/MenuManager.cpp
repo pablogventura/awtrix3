@@ -25,6 +25,7 @@ enum MenuState
     Appmenu,
     SoundMenu,
     VolumeMenu,
+    CalibrationMenu,
     UpdateMenu,
     MaxMenu
 };
@@ -43,16 +44,17 @@ const char *menuItems[] PROGMEM = {
     "APPS",
     "SOUND",
     "VOLUME",
+    "CAL",
     "UPDATE"};
 
 
 
 const char *menuItems_DE[] PROGMEM = {
-    "HELL", "FARBE", "WECHSEL", "T-TEMPO", "APPTIME", "ZEIT", "DATUM", "WOCHE", "SPRACHE", "TEMP", "APPS", "TON", "LAUTST", "UPDATE"};
+    "HELL", "FARBE", "WECHSEL", "T-TEMPO", "APPTIME", "ZEIT", "DATUM", "WOCHE", "SPRACHE", "TEMP", "APPS", "TON", "LAUTST", "KAL", "UPDATE"};
 const char *menuItems_ES[] PROGMEM = {
-    "LUM", "COLOR", "CAMBIO", "T-VELOC", "APPTIME", "HORA", "FECHA", "SEMANA", "IDIOMA", "TEMP", "APPS", "SONIDO", "VOL", "ACTUALIZ"};
+    "LUM", "COLOR", "CAMBIO", "T-VELOC", "APPTIME", "HORA", "FECHA", "SEMANA", "IDIOMA", "TEMP", "APPS", "SONIDO", "VOL", "CAL", "ACTUALIZ"};
 const char *menuItems_FR[] PROGMEM = {
-    "LUM", "COULEUR", "CHANGER", "V-VITE", "APPTIME", "HEURE", "DATE", "SEMAINE", "LANGUE", "TEMP", "APPS", "SON", "VOL", "MAJ"};
+    "LUM", "COULEUR", "CHANGER", "V-VITE", "APPTIME", "HEURE", "DATE", "SEMAINE", "LANGUE", "TEMP", "APPS", "SON", "VOL", "CAL", "MAJ"};
 int8_t menuIndex = 0;
 uint8_t menuItemCount = MaxMenu - 1;
 
@@ -362,7 +364,15 @@ void MenuManager_::selectButton()
     switch (currentState)
     {
     case MainMenu:
-        currentState = (MenuState)(menuIndex + 1);
+    {
+        MenuState nextState = (MenuState)(menuIndex + 1);
+        if (nextState == CalibrationMenu)
+        {
+            DisplayManager.enterCalibration();
+            inMenu = false;
+            return;
+        }
+        currentState = nextState;
         switch (currentState)
         {
         case BrightnessMenu:
@@ -382,8 +392,11 @@ void MenuManager_::selectButton()
                 UpdateManager.updateFirmware();
             }
             break;
+        default:
+            break;
         }
         break;
+    }
     case BrightnessMenu:
         AUTO_BRIGHTNESS = !AUTO_BRIGHTNESS;
         if (!AUTO_BRIGHTNESS)

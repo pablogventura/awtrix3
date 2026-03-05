@@ -21,7 +21,17 @@ Hold down the middle button for 2s to exit the current menu and to save your set
 | `TEMP` | Allows selection of temperature system (°C or °F).  |
 | `APPS` | Allows to enable or disable internal apps  |
 | `SOUND` | Allows to enable or disable sound output   |
+| `VOLUME` | Sound volume (if supported). |
+| `CAL` | **Pixel calibration**: full red/green/blue screens to check uniformity, and per-pixel gain (100–200%) to compensate weak or different LEDs. See below. |
 | `UPDATE` | Check and download new firmware if available. |
+
+### Pixel calibration (CAL)
+
+From the menu, select **CAL** and press the middle button to enter calibration mode.
+
+- **Left / Right**: In colour mode, cycle **Red → Green → Blue**. In pixel mode, move the selected pixel (cursor) left/right.
+- **Middle (short)**: In colour mode, switch to **pixel mode** (dim background + one bright pixel). In pixel mode, cycle the gain for the selected pixel: 100% → 120% → 150% → 180% → 200% (to boost weak LEDs).
+- **Middle (long, 2 s)**: Save gains and exit calibration. Gains are stored and applied to the display from then on.
 
 The onscreen menu can be displayed in four languages. Choose **LANGUAGE** and cycle with left/right to select **EN** (English), **DE** (Deutsch), **ES** (Español), or **FR** (Français). The setting is saved when you leave the menu (long press middle button).
 

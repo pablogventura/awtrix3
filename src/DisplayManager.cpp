@@ -21,6 +21,9 @@
 #include <HTTPClient.h>
 #include "base64.hpp"
 #include "Games/GameManager.h"
+#include <Preferences.h>
+
+#define MATRIX_PIXELS (MATRIX_WIDTH * MATRIX_HEIGHT)
 
 unsigned long lastArtnetStatusTime = 0;
 const int numberOfChannels = 256 * 3;
@@ -48,6 +51,12 @@ uint16_t gifX, gifY;
 CRGB leds[MATRIX_WIDTH * MATRIX_HEIGHT];
 CRGB ledsCopy[MATRIX_WIDTH * MATRIX_HEIGHT];
 float actualBri;
+
+// Pixel calibration state
+static bool calibrationActive = false;
+static uint8_t calSubmode = 0;       // 0=R, 1=G, 2=B, 3=pixel adjust
+static uint16_t calPixelIndex = 0;
+static uint8_t pixelGain[MATRIX_PIXELS];  // 100 = normal, 50..200 %
 int16_t cursor_x, cursor_y;
 uint32_t textColor;
 
@@ -1146,6 +1155,7 @@ void DisplayManager_::setup()
   ui->setBackgroundEffect(BACKGROUND_EFFECT);
   setAutoTransition(AUTO_TRANSITION);
   ui->init();
+  loadPixelGains();
 }
 
 void ResetCustomApps()
@@ -1214,8 +1224,42 @@ uint8_t received_packets = 0;
 bool universe1_complete = false;
 bool universe2_complete = false;
 
+static void drawCalibrationScreen()
+{
+  const int n = MATRIX_PIXELS;
+  if (calSubmode == 0)
+  {
+    for (int i = 0; i < n; i++)
+      leds[i] = CRGB(255, 0, 0);
+  }
+  else if (calSubmode == 1)
+  {
+    for (int i = 0; i < n; i++)
+      leds[i] = CRGB(0, 255, 0);
+  }
+  else if (calSubmode == 2)
+  {
+    for (int i = 0; i < n; i++)
+      leds[i] = CRGB(0, 0, 255);
+  }
+  else
+  {
+    for (int i = 0; i < n; i++)
+      leds[i] = CRGB(60, 60, 60);
+    if (calPixelIndex < n)
+      leds[calPixelIndex] = CRGB(255, 255, 255);
+  }
+}
+
 void DisplayManager_::tick()
 {
+  if (calibrationActive)
+  {
+    drawCalibrationScreen();
+    gammaCorrection();
+    matrix->show();
+    return;
+  }
   if (GAME_ACTIVE)
   {
     GameManager.tick();
@@ -1351,12 +1395,22 @@ void DisplayManager_::show()
 
 void DisplayManager_::leftButton()
 {
+  if (calibrationActive)
+  {
+    calibrationLeft();
+    return;
+  }
   if (!MenuManager.inMenu)
     ui->previousApp();
 }
 
 void DisplayManager_::rightButton()
 {
+  if (calibrationActive)
+  {
+    calibrationRight();
+    return;
+  }
   if (!MenuManager.inMenu)
     ui->nextApp();
 }
@@ -1390,6 +1444,11 @@ void DisplayManager_::previousApp()
 
 void DisplayManager_::selectButton()
 {
+  if (calibrationActive)
+  {
+    calibrationSelect();
+    return;
+  }
   if (!MenuManager.inMenu)
   {
     DisplayManager.getInstance().dismissNotify();
@@ -1398,6 +1457,11 @@ void DisplayManager_::selectButton()
 
 void DisplayManager_::selectButtonLong()
 {
+  if (calibrationActive)
+  {
+    calibrationSelectLong();
+    return;
+  }
 }
 
 void DisplayManager_::dismissNotify()
@@ -1981,11 +2045,110 @@ void DisplayManager_::gammaCorrection()
       }
     }
   }
+
+  for (int i = 0; i < MATRIX_PIXELS; i++)
+  {
+    uint8_t g = pixelGain[i];
+    if (g != 100)
+    {
+      leds[i].r = (uint8_t)min(255, (int)leds[i].r * g / 100);
+      leds[i].g = (uint8_t)min(255, (int)leds[i].g * g / 100);
+      leds[i].b = (uint8_t)min(255, (int)leds[i].b * g / 100);
+    }
+  }
 }
 
 void DisplayManager_::sendAppLoop()
 {
   MQTTManager.publish("stats/loop", getAppsAsJson().c_str());
+}
+
+bool DisplayManager_::isCalibrationActive()
+{
+  return calibrationActive;
+}
+
+void DisplayManager_::enterCalibration()
+{
+  calibrationActive = true;
+  calSubmode = 0;
+  calPixelIndex = 0;
+}
+
+void DisplayManager_::exitCalibration()
+{
+  savePixelGains();
+  calibrationActive = false;
+  MenuManager.inMenu = false;
+}
+
+void DisplayManager_::calibrationLeft()
+{
+  if (calSubmode <= 2)
+    calSubmode = (calSubmode + 2) % 3;
+  else
+    calPixelIndex = (calPixelIndex + MATRIX_PIXELS - 1) % MATRIX_PIXELS;
+}
+
+void DisplayManager_::calibrationRight()
+{
+  if (calSubmode <= 2)
+    calSubmode = (calSubmode + 1) % 3;
+  else
+    calPixelIndex = (calPixelIndex + 1) % MATRIX_PIXELS;
+}
+
+static const uint8_t CAL_GAIN_LEVELS[] = {100, 120, 150, 180, 200};
+static const int CAL_GAIN_COUNT = 5;
+
+void DisplayManager_::calibrationSelect()
+{
+  if (calSubmode <= 2)
+    calSubmode = 3;
+  else
+  {
+    if (calPixelIndex >= MATRIX_PIXELS)
+      return;
+    uint8_t cur = pixelGain[calPixelIndex];
+    int idx = 0;
+    for (int i = 0; i < CAL_GAIN_COUNT; i++)
+      if (CAL_GAIN_LEVELS[i] == cur)
+      {
+        idx = i;
+        break;
+      }
+    idx = (idx + 1) % CAL_GAIN_COUNT;
+    pixelGain[calPixelIndex] = CAL_GAIN_LEVELS[idx];
+  }
+}
+
+void DisplayManager_::calibrationSelectLong()
+{
+  exitCalibration();
+}
+
+void DisplayManager_::loadPixelGains()
+{
+  memset(pixelGain, 100, sizeof(pixelGain));
+  Preferences prefs;
+  if (prefs.begin("cal", true))
+  {
+    prefs.getBytes("gain", pixelGain, MATRIX_PIXELS);
+    prefs.end();
+  }
+  for (int i = 0; i < MATRIX_PIXELS; i++)
+    if (pixelGain[i] < 50 || pixelGain[i] > 200)
+      pixelGain[i] = 100;
+}
+
+void DisplayManager_::savePixelGains()
+{
+  Preferences prefs;
+  if (prefs.begin("cal", false))
+  {
+    prefs.putBytes("gain", pixelGain, MATRIX_PIXELS);
+    prefs.end();
+  }
 }
 
 String CRGBtoHex(CRGB color)
