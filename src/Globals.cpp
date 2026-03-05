@@ -54,6 +54,13 @@ void loadDevSettings()
         if (error)
         {
             DEBUG_PRINTLN(F("Failed to read dev settings"));
+            file.close();
+            return;
+        }
+        if (doc.overflowed())
+        {
+            DEBUG_PRINTLN(F("dev.json too large for buffer"));
+            file.close();
             return;
         }
 

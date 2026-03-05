@@ -273,7 +273,7 @@ Here is a demo, please press the triangle to unfold.
     "z": "54b42d8d.cda474",
     "g": "2a59d30d07abe14f",
     "name": "Data",
-    "func": "msg.payload = { \"id\": \"UCpGLALzRO0uaasWTsm9M99w\", \"key\": \"XXX\", \"part\":\"statistics\"}\nreturn msg;",
+    "func": "msg.payload = { \"id\": \"UCpGLALzRO0uaasWTsm9M99w\", \"key\": \"YOUR_YOUTUBE_API_KEY\", \"part\":\"statistics\"}\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
@@ -321,13 +321,13 @@ Here is a demo, please press the triangle to unfold.
 This Node-RED flow retrieves and displays the subscriber count of a specified YouTube channel on an AWTRIX 3 device. The flow consists of the following nodes:
 
 1. **Inject**: This node triggers the flow periodically (every hour) or manually.
-2. **Data (Function)**: This node contains the YouTube channel ID and the YouTube API key. Replace "XXX" with your YouTube API key and Youtube ID. The node constructs a payload containing the channel ID, API key, and required statistics and sends it to the "HTTP request" node.
+2. **Data (Function)**: This node contains the YouTube channel ID and the YouTube API key. Replace `YOUR_YOUTUBE_API_KEY` with your YouTube API key and the channel ID with your Youtube ID. The node constructs a payload containing the channel ID, API key, and required statistics and sends it to the "HTTP request" node.
 3. **HTTP request**: This node sends a GET request to the YouTube API to retrieve the channel's statistics. The response is returned as a JavaScript object and passed to the "parser" node.
 4. **parser (Function)**: This node extracts the subscriber count from the received channel statistics and constructs a payload containing the count and an icon (Icon 5029). The payload is sent to the "MQTT out" node.
 5. **MQTT out**: This node publishes the payload to the MQTT topic "ulanzi/custom/youtube" on a local MQTT broker. You also have to change the topic in this node to fit your mqtt prefix.
 6. **Comment (Youtube Follower)**: This node contains additional information about the flow. It does not affect the flow's functionality.
 
-To use this flow, replace the "XXX" in the "Data" node with your YouTube API key and ensure that the MQTT broker settings in the "MQTT out" node are correct.
+To use this flow, replace `YOUR_YOUTUBE_API_KEY` in the "Data" node with your YouTube API key and ensure that the MQTT broker settings in the "MQTT out" node are correct.
 The flow will then retrieve the subscriber count of the specified YouTube channel and display it on your AWTRIX device along with the icon.
 This Flow uses icon 5029 from LM (Just download it from the awtrix webinterface). You can change the icon in the flow to your favorite one.
 

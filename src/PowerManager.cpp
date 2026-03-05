@@ -29,6 +29,8 @@ void PowerManager_::sleepParser(const char *json)
       DEBUG_PRINTLN(F("Failed to parse json"));
     return;
   }
+  if (doc.overflowed())
+    return;
 
   if (doc.containsKey("sleep"))
   {

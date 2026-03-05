@@ -302,6 +302,8 @@ bool PeripheryManager_::parseSound(const char *json)
     {
         return playFromFile(String(json));
     }
+    if (doc.overflowed())
+        return false;
     if (doc.containsKey("sound"))
     {
         return playFromFile(doc["sound"].as<String>());
