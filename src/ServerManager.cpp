@@ -131,6 +131,8 @@ void addHandler()
                    { mws.webserver->send(200, "text/html", screen_html); });
     mws.addHandler("/backup", HTTP_GET, []()
                    { mws.webserver->send(200, "text/html", backup_html); });
+    mws.addHandler("/lang", HTTP_GET, []()
+                   { mws.webserver->send(200, "text/html", lang_html); });
     mws.addHandler("/api/previousapp", HTTP_POST, []()
                    { DisplayManager.previousApp(); mws.webserver->send(200,F("text/plain"),F("OK")); });
     mws.addHandler("/api/notify/dismiss", HTTP_ANY, []()
